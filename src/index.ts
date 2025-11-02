@@ -23,20 +23,37 @@ async function main() {
     // 🧩 Configuration CORS multi-origine propre
     // ====================================================
     const FRONTEND_URL = process.env.FRONTEND_URL || 'https://simply-three.vercel.app';
-    const allowedOrigins = FRONTEND_URL.split(',').map(o => o.trim());
+    const allowedOrigins = FRONTEND_URL.split(',').map(o => o.trim()).filter(Boolean);
+
+    // Log configured allowed origins on startup (helpful to verify Render env)
+    console.log('✅ CORS allowed origins (configured):', allowedOrigins.join(', '));
+
+    // Small middleware to log incoming Origin header when not in production
+    app.use((req, _res, next) => {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('➡ Incoming Origin header:', req.headers.origin || '(none)');
+      }
+      next();
+    });
 
     app.use(cors({
-      origin: process.env.FRONTEND_URL?.split(',') || [
-        'http://localhost:5173',
-        'http://localhost:8080',
-        'https://simply-three.vercel.app'
-      ],
+      origin: (origin, callback) => {
+        // allow requests with no origin (server-to-server tools like curl)
+        if (!origin) return callback(null, true);
+
+        // If origin matches allowed list, echo it back explicitly so the
+        // Access-Control-Allow-Origin header is set to the requesting origin.
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, origin);
+        }
+
+        // Not allowed
+        return callback(new Error(`Not allowed by CORS: ${origin}`));
+      },
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization'], // ✅ essentiel
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
     }));
-
-    console.log('✅ CORS configuré pour :', allowedOrigins.join(', '));
 
     // ====================================================
     // Middlewares & Routes
