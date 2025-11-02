@@ -20,31 +20,16 @@ async function main() {
     const app = express();
 
     // ====================================================
-    // 🧩 Configuration CORS robuste
+    // 🧩 Configuration CORS simple et efficace
     // ====================================================
-    const FRONTEND_URL = process.env.FRONTEND_URL || 'https://simply-three.vercel.app';
-    const allowedOrigins = FRONTEND_URL.split(',').map((s) => s.trim());
 
-    const corsOptions: cors.CorsOptions = {
-      origin: (origin, callback) => {
-        if (!origin) return callback(null, true); // ✅ autoriser les requêtes sans origine (ex: Postman)
-        if (allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          console.warn('🚫 Requête refusée depuis:', origin);
-          callback(null, false); // ne pas lever d'erreur !
-        }
-      },
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      credentials: true,
-      allowedHeaders: ['Content-Type', 'Authorization'],
-      optionsSuccessStatus: 204, // ✅ évite les erreurs sur certains navigateurs
-    };
+    app.use(cors({
+      origin: process.env.FRONTEND_URL || 'https://simply-three.vercel.app',
+      credentials: true
+    }));
 
-    // appliquer globalement
-    app.use(cors(corsOptions));
-    // gérer explicitement les requêtes OPTIONS
-    app.options('*', cors(corsOptions));
+    console.log('✅ CORS configuré pour', process.env.FRONTEND_URL || 'https://simply-three.vercel.app');
+
 
     // ====================================================
     // Middlewares & Routes
