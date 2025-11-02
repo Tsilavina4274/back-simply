@@ -36,10 +36,17 @@ async function main() {
       next();
     });
 
+    const DEBUG_CORS = process.env.DEBUG_CORS === 'true';
+
     app.use(cors({
       origin: (origin, callback) => {
         // allow requests with no origin (server-to-server tools like curl)
         if (!origin) return callback(null, true);
+
+        if (DEBUG_CORS) {
+          // echo origin for debugging (accept any origin temporarily)
+          return callback(null, origin);
+        }
 
         // If origin matches allowed list, echo it back explicitly so the
         // Access-Control-Allow-Origin header is set to the requesting origin.
