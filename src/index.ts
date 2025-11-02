@@ -24,18 +24,19 @@ async function main() {
     // Middleware
       // Middleware
       // Configure CORS using FRONTEND_URL (can be a single URL or a comma-separated list)
-      const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const FRONTEND_URL = process.env.FRONTEND_URL || 'https://simply-three.vercel.app';
       const allowedOrigins = FRONTEND_URL.split(',').map((s) => s.trim());
 
+      // ✅ Configuration CORS
       app.use(cors({
-        origin: (origin, callback) => {
-          // allow requests with no origin (e.g. server-to-server, Postman)
-          if (!origin) return callback(null, true);
-          if (allowedOrigins.includes(origin)) return callback(null, true);
-          return callback(new Error(`Not allowed by CORS: ${origin}`));
-        },
-        credentials: true,
+        origin: [
+          "https://simply-three.vercel.app",  // ton frontend
+          "http://localhost:5173"              // utile pour les tests locaux
+        ],
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+        credentials: true
       }));
+
     app.use(express.json());
     app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads'))); // Serve uploaded files
 
