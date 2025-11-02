@@ -55,7 +55,7 @@ async function main() {
     const port = Number(process.env.PORT || 3000);
     app.listen(port, () => {
       console.log(`✅ Server listening on http://localhost:${port}`);
-      console.log(`🌍 Allowed origins: ${allowedOrigins.join(', ')}`);
+      //console.log(`🌍 Allowed origins: ${allowedOrigins.join(', ')}`);
     });
 
   } catch (error) {
