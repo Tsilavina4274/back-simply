@@ -21,26 +21,37 @@ async function main() {
 
     const app = express();
 
-    // Middleware
-      // Middleware
-      // Configure CORS using FRONTEND_URL (can be a single URL or a comma-separated list)
-      const FRONTEND_URL = process.env.FRONTEND_URL || 'https://simply-three.vercel.app';
-      const allowedOrigins = FRONTEND_URL.split(',').map((s) => s.trim());
+    // ====================================================
+    // 🧩 Configuration CORS
+    // ====================================================
+    const FRONTEND_URL = process.env.FRONTEND_URL || 'https://simply-three.vercel.app';
+    const allowedOrigins = FRONTEND_URL.split(',').map((s) => s.trim());
 
-      // ✅ Configuration CORS
-      app.use(cors({
-        origin: [
-          "https://simply-three.vercel.app",  // ton frontend
-          "http://localhost:5173"              // utile pour les tests locaux
-        ],
-        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        credentials: true
-      }));
+    const corsOptions: cors.CorsOptions = {
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    };
 
+    app.use(cors(corsOptions));
+
+    // Permet à Express de répondre aux requêtes préflight (OPTIONS)
+    app.options('*', cors(corsOptions));
+
+    // ====================================================
+    // 🧩 Middlewares & Routes
+    // ====================================================
     app.use(express.json());
-    app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads'))); // Serve uploaded files
+    app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-    // Routes
+    // Routes principales
     app.use('/auth', authRoutes);
     app.use('/users', usersRoutes);
     app.use('/fans', fansRoutes);
@@ -48,16 +59,21 @@ async function main() {
     app.use('/contenu', contenuRoutes);
     app.use('/messages', messagesRoutes);
 
-    // Error handler
+    // ====================================================
+    // 🧩 Gestion des erreurs
+    // ====================================================
     app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-      console.error(err.stack);
+      console.error('❌ Error:', err.stack);
       res.status(500).json({ error: 'Something broke!' });
     });
 
-    // Start server
+    // ====================================================
+    // 🚀 Lancement du serveur
+    // ====================================================
     const port = Number(process.env.PORT || 3000);
     app.listen(port, () => {
       console.log(`✅ Server listening on http://localhost:${port}`);
+      console.log(`🌍 Allowed origins: ${allowedOrigins.join(', ')}`);
     });
 
   } catch (error) {
@@ -70,4 +86,3 @@ main().catch((error) => {
   console.error('❌ Fatal error:', error);
   process.exit(1);
 });
-
