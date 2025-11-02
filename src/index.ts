@@ -10,12 +10,10 @@ import imagesRoutes from './routes/images';
 import contenuRoutes from './routes/contenu';
 import messagesRoutes from './routes/messages';
 
-// Charger les variables d'environnement
 dotenv.config();
 
 async function main() {
   try {
-    // Vérifier la connexion à la base de données
     await prisma.$connect();
     console.log('✅ Connected to database');
 
@@ -29,10 +27,12 @@ async function main() {
 
     const corsOptions: cors.CorsOptions = {
       origin: (origin, callback) => {
+        // Autoriser les requêtes sans "origin" (ex: Postman, Render health check)
         if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
-          callback(new Error('Not allowed by CORS'));
+          console.warn('❌ Requête CORS refusée depuis:', origin);
+          callback(null, false); // <-- au lieu de throw Error
         }
       },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -41,17 +41,14 @@ async function main() {
     };
 
     app.use(cors(corsOptions));
-
-    // Permet à Express de répondre aux requêtes préflight (OPTIONS)
-    app.options('*', cors(corsOptions));
+    app.options('*', cors(corsOptions)); // important pour OPTIONS
 
     // ====================================================
-    // 🧩 Middlewares & Routes
+    // Middlewares & Routes
     // ====================================================
     app.use(express.json());
     app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-    // Routes principales
     app.use('/auth', authRoutes);
     app.use('/users', usersRoutes);
     app.use('/fans', fansRoutes);
@@ -60,16 +57,13 @@ async function main() {
     app.use('/messages', messagesRoutes);
 
     // ====================================================
-    // 🧩 Gestion des erreurs
+    // Gestion des erreurs
     // ====================================================
     app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
       console.error('❌ Error:', err.stack);
       res.status(500).json({ error: 'Something broke!' });
     });
 
-    // ====================================================
-    // 🚀 Lancement du serveur
-    // ====================================================
     const port = Number(process.env.PORT || 3000);
     app.listen(port, () => {
       console.log(`✅ Server listening on http://localhost:${port}`);
