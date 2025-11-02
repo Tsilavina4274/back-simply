@@ -20,28 +20,31 @@ async function main() {
     const app = express();
 
     // ====================================================
-    // 🧩 Configuration CORS
+    // 🧩 Configuration CORS robuste
     // ====================================================
     const FRONTEND_URL = process.env.FRONTEND_URL || 'https://simply-three.vercel.app';
     const allowedOrigins = FRONTEND_URL.split(',').map((s) => s.trim());
 
     const corsOptions: cors.CorsOptions = {
       origin: (origin, callback) => {
-        // Autoriser les requêtes sans "origin" (ex: Postman, Render health check)
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (!origin) return callback(null, true); // ✅ autoriser les requêtes sans origine (ex: Postman)
+        if (allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
-          console.warn('❌ Requête CORS refusée depuis:', origin);
-          callback(null, false); // <-- au lieu de throw Error
+          console.warn('🚫 Requête refusée depuis:', origin);
+          callback(null, false); // ne pas lever d'erreur !
         }
       },
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       credentials: true,
       allowedHeaders: ['Content-Type', 'Authorization'],
+      optionsSuccessStatus: 204, // ✅ évite les erreurs sur certains navigateurs
     };
 
+    // appliquer globalement
     app.use(cors(corsOptions));
-    app.options('*', cors(corsOptions)); // important pour OPTIONS
+    // gérer explicitement les requêtes OPTIONS
+    app.options('*', cors(corsOptions));
 
     // ====================================================
     // Middlewares & Routes
