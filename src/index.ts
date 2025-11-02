@@ -23,10 +23,16 @@ async function main() {
     // 🧩 Configuration CORS multi-origine propre
     // ====================================================
     const FRONTEND_URL = process.env.FRONTEND_URL || 'https://simply-three.vercel.app';
-    const allowedOrigins = FRONTEND_URL.split(',').map(o => o.trim()).filter(Boolean);
+    const allowedOriginsRaw = FRONTEND_URL.split(',').map(o => o.trim()).filter(Boolean);
+
+    // Normalization helper: trim, remove wrapping quotes/backticks, strip trailing slash, lowercase
+    const normalizeOrigin = (s: string) => s.trim().replace(/^(["'`])+|(["'`])+$/g, '').replace(/\/+$/g, '').toLowerCase();
+
+    const allowedOrigins = allowedOriginsRaw.map(normalizeOrigin);
 
     // Log configured allowed origins on startup (helpful to verify Render env)
-    console.log('✅ CORS allowed origins (configured):', allowedOrigins.join(', '));
+    console.log('✅ CORS allowed origins (raw):', allowedOriginsRaw.join(', '));
+    console.log('✅ CORS allowed origins (normalized):', allowedOrigins.join(', '));
 
     // Small middleware to log incoming Origin header when not in production
     app.use((req, _res, next) => {
@@ -48,9 +54,10 @@ async function main() {
           return callback(null, origin);
         }
 
+        const normalized = normalizeOrigin(origin);
         // If origin matches allowed list, echo it back explicitly so the
         // Access-Control-Allow-Origin header is set to the requesting origin.
-        if (allowedOrigins.includes(origin)) {
+        if (allowedOrigins.includes(normalized)) {
           return callback(null, origin);
         }
 
