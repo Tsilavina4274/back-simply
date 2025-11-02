@@ -20,16 +20,23 @@ async function main() {
     const app = express();
 
     // ====================================================
-    // 🧩 Configuration CORS simple et efficace
+    // 🧩 Configuration CORS multi-origine propre
     // ====================================================
+    const FRONTEND_URL = process.env.FRONTEND_URL || 'https://simply-three.vercel.app';
+    const allowedOrigins = FRONTEND_URL.split(',').map(o => o.trim());
 
     app.use(cors({
-      origin: process.env.FRONTEND_URL || 'https://simply-three.vercel.app',
-      credentials: true
+      origin: process.env.FRONTEND_URL?.split(',') || [
+        'http://localhost:5173',
+        'http://localhost:8080',
+        'https://simply-three.vercel.app'
+      ],
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization'], // ✅ essentiel
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
     }));
 
-    console.log('✅ CORS configuré pour', process.env.FRONTEND_URL || 'https://simply-three.vercel.app');
-
+    console.log('✅ CORS configuré pour :', allowedOrigins.join(', '));
 
     // ====================================================
     // Middlewares & Routes
@@ -49,13 +56,12 @@ async function main() {
     // ====================================================
     app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
       console.error('❌ Error:', err.stack);
-      res.status(500).json({ error: 'Something broke!' });
+      res.status(500).json({ error: err.message || 'Something broke!' });
     });
 
     const port = Number(process.env.PORT || 3000);
     app.listen(port, () => {
       console.log(`✅ Server listening on http://localhost:${port}`);
-      //console.log(`🌍 Allowed origins: ${allowedOrigins.join(', ')}`);
     });
 
   } catch (error) {
